@@ -13,10 +13,11 @@ function MainAssistant() {
 }
 
 MainAssistant.prototype.setup = function() {
+    //Default to light theme
+    if (Object.keys(appModel.AppSettingsCurrent).indexOf('ThemePreference') == -1)
+        appModel.AppSettingsCurrent["ThemePreference"] = "palm-default";
+    appModel.SetThemePreference(this.controller);
 
-    //Load preferences
-    appModel.LoadSettings();
-    Mojo.Log.info("settings now: " + JSON.stringify(appModel.AppSettingsCurrent));
     this.deviceType = systemModel.DetectDevice();
     this.errorCount = 5;
     
@@ -67,7 +68,7 @@ MainAssistant.prototype.setup = function() {
     //Command Buttons
     this.cmdMenuAttributes = {
         spacerHeight: 40,
-        //menuClass: 'no-fade'
+        menuClass: 'no-fade'
     },
     this.cmdMenuModel = {
         visible: false,
