@@ -257,7 +257,7 @@ MainAssistant.prototype.handleCommand = function(event) {
             case 'do-HandleURLs':
                 var thisMenuModel = this.controller.getWidgetSetup(Mojo.Menu.appMenu).model;
                 if (thisMenuModel.items[2].chosen) {
-                    //remote URL handler
+                    //remove URL handler
                     systemModel.removeHandlerForURL(Mojo.Controller.appInfo.id);
                     thisMenuModel.items[2].chosen = false;
                 } else {
