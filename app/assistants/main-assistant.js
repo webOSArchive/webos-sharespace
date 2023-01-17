@@ -432,7 +432,7 @@ MainAssistant.prototype.showNewShareOptions = function() {
 
 MainAssistant.prototype.pickAndUploadImage = function() {
     var self = this; //Retain the reference for the callback
-    var params = { kind: 'image', actionName: 'Share Photo',
+        var params = { kind: 'image', crop: { width: 300, height: 300 }, actionName: 'Share Photo',
         onSelect: function(file){
             Mojo.Log.info("selected file was: " + JSON.stringify(file));
             Mojo.Controller.getAppController().showBanner({ messageText: 'Sharing image...', icon: 'assets/notify.png' }, { source: 'notification' });
