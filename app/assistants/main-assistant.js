@@ -177,7 +177,7 @@ MainAssistant.prototype.activate = function(data) {
     useShortLink = Mojo.Controller.appInfo.shortURL;
     if (appModel.AppSettingsCurrent["UseCustomEndpoint"] && appModel.AppSettingsCurrent["ShortURL"] && appModel.AppSettingsCurrent["ShortURL"] != "")
         useShortLink = appModel.AppSettingsCurrent["ShortURL"];
-    systemModel.ListHandlersForURL("https://wosa.link",
+    systemModel.ListHandlersForURL("https://share.wosa.link",
         function(response) {
             var thisMenuModel = this.controller.getWidgetSetup(Mojo.Menu.appMenu).model;
             if (JSON.stringify(response).indexOf(Mojo.Controller.appInfo.id) != -1) {
@@ -262,7 +262,7 @@ MainAssistant.prototype.handleCommand = function(event) {
                     thisMenuModel.items[2].chosen = false;
                 } else {
                     //add URL handler
-                    systemModel.AddHandlerForURL("^[^:]+://wosa.link", Mojo.Controller.appInfo.id);
+                    systemModel.AddHandlerForURL("^[^:]+://share.wosa.link", Mojo.Controller.appInfo.id);
                     thisMenuModel.items[2].chosen = true;
                 }
                 this.controller.modelChanged(thisMenuModel);
