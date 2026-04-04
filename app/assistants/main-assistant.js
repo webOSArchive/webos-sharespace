@@ -108,13 +108,26 @@ MainAssistant.prototype.setup = function() {
 MainAssistant.prototype.activate = function(data) {
 
     //Set options for service model
-    serviceModel.ForceHTTP = appModel.AppSettingsCurrent["ForceHTTP"];
+    serviceModel.ForceHTTPS = appModel.AppSettingsCurrent["ForceHTTPS"];
     serviceModel.UseCustomEndpoint = appModel.AppSettingsCurrent["UseCustomEndpoint"];
     serviceModel.CustomEndpointURL = appModel.AppSettingsCurrent["EndpointURL"];
     serviceModel.CustomShortURL = appModel.AppSettingsCurrent["ShortURL"];
     serviceModel.CustomCreateKey = appModel.AppSettingsCurrent["CustomCreateKey"];
     serviceModel.UseCustomClientId = appModel.AppSettingsCurrent["UseCustomClientId"];
     serviceModel.CustomClientId = appModel.AppSettingsCurrent["CustomClientId"];
+
+    // Deprecation banner: show when using the default endpoint and not yet dismissed
+    var usingDefault = (!appModel.AppSettingsCurrent["UseCustomEndpoint"]
+                        || !appModel.AppSettingsCurrent["EndpointURL"]
+                        || appModel.AppSettingsCurrent["EndpointURL"] == "");
+    var dismissed = appModel.DeprecationDismissed;
+    if (usingDefault && !dismissed) {
+        this.controller.get("divDeprecationBanner").style.display = "block";
+        this.bannerClickHandler = this.handleBannerClick.bind(this);
+        this.controller.get("divDeprecationBanner").addEventListener("click", this.bannerClickHandler);
+    } else {
+        this.controller.get("divDeprecationBanner").style.display = "none";
+    }
 
     //Set correct menu label
     var loggedInLabel = "Log In";
@@ -507,23 +520,44 @@ MainAssistant.prototype.showNewShareScene = function() {
 }
 
 /* Login Stuff */
+MainAssistant.prototype.handleBannerClick = function(event) {
+    var targetId = event.target ? event.target.id : "";
+    if (targetId == "lnkDismissBanner") {
+        appModel.DeprecationDismissed = true;
+        this.controller.get("divDeprecationBanner").style.display = "none";
+        this.controller.get("divDeprecationBanner").removeEventListener("click", this.bannerClickHandler);
+    } else {
+        var stageController = Mojo.Controller.getAppController().getActiveStageController();
+        stageController.pushScene({ name: "preferences", disableSceneScroller: false });
+    }
+}
+
 MainAssistant.prototype.showWelcomePrompt = function() {
+    var hasEndpoint = (appModel.AppSettingsCurrent["UseCustomEndpoint"]
+                       && appModel.AppSettingsCurrent["EndpointURL"] != "");
+    var choices = [
+        { label: 'Log In', value: "login", type: 'affirmative' },
+        { label: 'Create New', value: "new", type: 'neutral' },
+        { label: 'Preferences', value: "prefs", type: 'neutral' }
+    ];
+    var message = hasEndpoint
+        ? "Do you want to Log In to an existing share space, or create a new one on your server?"
+        : "The community server is shutting down later this year. Log In to retrieve your content before it closes, or set up your own server in Preferences.";
     this.controller.showAlertDialog({
         onChoose: function(value) {
             if (value == "login") {
                 this.showLogin();
             } else if (value == "new") {
-                Mojo.Log.info("new selected!");
                 var stageController = Mojo.Controller.getAppController().getActiveStageController();
                 stageController.swapScene({ transition: Mojo.Transition.crossFade, name: "newuser" });
+            } else if (value == "prefs") {
+                var stageController = Mojo.Controller.getAppController().getActiveStageController();
+                stageController.pushScene({ name: "preferences", disableSceneScroller: false });
             }
-        },
+        }.bind(this),
         title: "Welcome to Share Space!",
-        message: "Your shared clipboard for webOS! This client app can be used with a web service and web app that lets you share content between devices, or with other users! Do you want to Log In to an existing share space, or create a new one?",
-        choices: [
-            { label: 'Log In', value: "login", type: 'affirmative' },
-            { label: 'Create New', value: "new", type: 'neutral' },
-        ]
+        message: message,
+        choices: choices
     });
 }
 
@@ -574,6 +608,10 @@ MainAssistant.prototype.deactivate = function(event) {
     /* remove any event handlers you added in activate and do any other cleanup that should happen before
        this scene is popped or another scene is pushed on top */
     this.controller.window.clearInterval(refreshInt);
+    if (this.bannerClickHandler) {
+        this.controller.get("divDeprecationBanner").removeEventListener("click", this.bannerClickHandler);
+        this.bannerClickHandler = null;
+    }
     Mojo.Event.stopListening(this.controller.get("shareList"), Mojo.Event.listDelete, this.handleListDelete);
     Mojo.Event.stopListening(this.controller.get("shareList"), Mojo.Event.listTap, this.handleListClick);
     Mojo.Event.stopListening(this.controller.get("shareList"), Mojo.Event.listAdd, this.handleListAdd);

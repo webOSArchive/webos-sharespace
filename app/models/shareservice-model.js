@@ -12,7 +12,7 @@ var ShareServiceModel = function() {
 };
 
 //Properties
-ShareServiceModel.prototype.ForceHTTP = false;
+ShareServiceModel.prototype.ForceHTTPS = false;
 ShareServiceModel.prototype.UseCustomShare = false;
 ShareServiceModel.prototype.UseCustomEndpoint = false;
 ShareServiceModel.prototype.CustomEndpointURL = "";
@@ -35,8 +35,8 @@ ShareServiceModel.prototype.buildURL = function(username, actionType) {
     var path = urlBase + "/" + actionType + ".php";
     if (username)
         path += "?username=" + username;
-    if (this.ForceHTTP)
-        path = path.replace ("https:", "http:");
+    if (this.ForceHTTPS)
+        path = path.replace("http:", "https:");
     return path;
 }
 

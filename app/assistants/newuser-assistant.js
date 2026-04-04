@@ -149,10 +149,17 @@ NewuserAssistant.prototype.cancelClick = function(event) {
 
 NewuserAssistant.prototype.errorHandler = function (errorText, callback) {
     Mojo.Log.error(errorText);
-    Mojo.Controller.getAppController().showBanner({ messageText: errorText, icon: "assets/notify.png" }, "", "");
-    errorText = errorText.charAt(0).toUpperCase() + errorText.slice(1);
-    Mojo.Additions.ShowDialogBox("Share Sevice Error", errorText);
     this.controller.get('btnOK').mojo.deactivate();
+    if (errorText.indexOf("disabled on this server") != -1) {
+        Mojo.Additions.ShowDialogBox("Account Creation Disabled",
+            "This server is not accepting new accounts. " +
+            "Contact the server operator for access, or set up " +
+            "your own server in Preferences.");
+    } else {
+        Mojo.Controller.getAppController().showBanner({ messageText: errorText, icon: "assets/notify.png" }, "", "");
+        errorText = errorText.charAt(0).toUpperCase() + errorText.slice(1);
+        Mojo.Additions.ShowDialogBox("Share Service Error", errorText);
+    }
 }
 
 NewuserAssistant.prototype.deactivate = function(event) {

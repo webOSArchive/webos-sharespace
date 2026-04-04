@@ -20,7 +20,7 @@ DownloadAssistant.prototype.setup = function() {
 DownloadAssistant.prototype.activate = function(event) {
     Mojo.Log.info("Dashboard activating!");
     //Set options for service model
-    serviceModel.ForceHTTP = appModel.AppSettingsCurrent["ForceHTTP"];
+    serviceModel.ForceHTTPS = appModel.AppSettingsCurrent["ForceHTTPS"];
     serviceModel.UseCustomEndpoint = appModel.AppSettingsCurrent["UseCustomEndpoint"];
     serviceModel.CustomEndpointURL = appModel.AppSettingsCurrent["EndpointURL"];
     serviceModel.CustomShortURL = appModel.AppSettingsCurrent["ShortURL"];

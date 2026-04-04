@@ -15,6 +15,7 @@ var AppModel = function() {
     this.LastShareSelected = null;
     this.CurrentShareURL = null;
     this.FileMgrPresent = true;
+    this.DeprecationDismissed = false;
 
     //Define your app preferences (to be saved by OS)
     this.AppSettingsCurrent = null;
@@ -27,7 +28,7 @@ var AppModel = function() {
         UseAutoDownload: false,
         AutoDownloadTime: "01:00:00",
         CopyLinkOnShare: true,
-        ForceHTTP: false,
+        ForceHTTPS: false,
         UseCustomEndpoint: false,
         EndpointURL: "",
         ShortURL: "",
@@ -160,6 +161,17 @@ AppModel.prototype.LoadSettings = function(safe) {
 }
 
 AppModel.prototype.loadCookieIntoCurrent = function(cookieSettings) {
+    // Migrate settings from v1.x: remove the old ForceHTTP key (inverted logic,
+    // replaced by ForceHTTPS). HTTP is now the default so no value needs porting.
+    if (typeof cookieSettings["ForceHTTP"] !== "undefined") {
+        delete cookieSettings["ForceHTTP"];
+    }
+    // Backfill any keys added in this version that are absent from older cookies
+    for (var key in this.AppSettingsDefaults) {
+        if (typeof cookieSettings[key] === "undefined") {
+            cookieSettings[key] = this.AppSettingsDefaults[key];
+        }
+    }
     this.AppSettingsCurrent = cookieSettings;
 }
 
