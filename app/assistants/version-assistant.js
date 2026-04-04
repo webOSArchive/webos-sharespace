@@ -7,6 +7,12 @@ function VersionAssistant(startup) {
     //New Features
     this.changelog = [
         {
+            version: "Version 2.0.0 Changes",
+            detail: [
+                "Self-hosting is now default. Please begin migrating to your own server.",
+            ]
+        },
+        {
             version: "Version 1.0.2 Changes",
             detail: [
                 "Fixes a bug that prevents background downloads when Always Use HTTP is on",
