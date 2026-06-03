@@ -190,7 +190,8 @@ MainAssistant.prototype.activate = function(data) {
     useShortLink = Mojo.Controller.appInfo.shortURL;
     if (appModel.AppSettingsCurrent["UseCustomEndpoint"] && appModel.AppSettingsCurrent["ShortURL"] && appModel.AppSettingsCurrent["ShortURL"] != "")
         useShortLink = appModel.AppSettingsCurrent["ShortURL"];
-    systemModel.ListHandlersForURL("https://share.wosa.link",
+    var shortLinkProbe = useShortLink.replace(/\/+$/, "");
+    systemModel.ListHandlersForURL(shortLinkProbe,
         function(response) {
             var thisMenuModel = this.controller.getWidgetSetup(Mojo.Menu.appMenu).model;
             if (JSON.stringify(response).indexOf(Mojo.Controller.appInfo.id) != -1) {
@@ -274,8 +275,13 @@ MainAssistant.prototype.handleCommand = function(event) {
                     systemModel.removeHandlerForURL(Mojo.Controller.appInfo.id);
                     thisMenuModel.items[2].chosen = false;
                 } else {
-                    //add URL handler
-                    systemModel.AddHandlerForURL("^[^:]+://share.wosa.link", Mojo.Controller.appInfo.id);
+                    //add URL handler — derive host from configured short URL
+                    var handlerShortLink = Mojo.Controller.appInfo.shortURL;
+                    if (appModel.AppSettingsCurrent["UseCustomEndpoint"] && appModel.AppSettingsCurrent["ShortURL"] && appModel.AppSettingsCurrent["ShortURL"] != "")
+                        handlerShortLink = appModel.AppSettingsCurrent["ShortURL"];
+                    var handlerHost = handlerShortLink.replace(/^[a-z]+:\/\//i, "").replace(/\/.*$/, "");
+                    var escapedHost = handlerHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                    systemModel.AddHandlerForURL("^[^:]+://" + escapedHost, Mojo.Controller.appInfo.id);
                     thisMenuModel.items[2].chosen = true;
                 }
                 this.controller.modelChanged(thisMenuModel);

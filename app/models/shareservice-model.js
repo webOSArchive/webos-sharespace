@@ -42,7 +42,7 @@ ShareServiceModel.prototype.buildURL = function(username, actionType) {
 
 ShareServiceModel.prototype.MakeShareURL = function(username, guid, type) {
     var urlBase = this.shortUrlBase;
-    if (this.CustomShortURL == true && this.CustomShortURL != "") {
+    if (this.UseCustomEndpoint == true && this.CustomShortURL != "") {
         urlBase = this.CustomShortURL;
     }
     if (type.indexOf("image") != -1)
