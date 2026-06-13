@@ -29,10 +29,10 @@ var AppModel = function() {
         AutoDownloadTime: "01:00:00",
         CopyLinkOnShare: true,
         ForceHTTPS: false,
-        UseCustomEndpoint: false,
+        UseCustomEndpoint: true,
         EndpointURL: "",
         ShortURL: "",
-        UseCustomClientId: false,
+        UseCustomClientId: true,
         CustomClientId: "",
         CustomCreateKey: "",
         UseCustomDownloadPath: false,
@@ -172,6 +172,9 @@ AppModel.prototype.loadCookieIntoCurrent = function(cookieSettings) {
             cookieSettings[key] = this.AppSettingsDefaults[key];
         }
     }
+    // Public service is retired: UseCustomEndpoint and UseCustomClientId are always true now.
+    cookieSettings["UseCustomEndpoint"] = (cookieSettings["EndpointURL"] && cookieSettings["EndpointURL"] != "");
+    cookieSettings["UseCustomClientId"] = true;
     this.AppSettingsCurrent = cookieSettings;
 }
 

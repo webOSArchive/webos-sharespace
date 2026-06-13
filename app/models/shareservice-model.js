@@ -6,32 +6,21 @@ ShareBoard Model - Mojo
  Description: A model to interact with a share service
 */
 
-var ShareServiceModel = function() {
-    this.urlBase = Mojo.Controller.appInfo.serviceURL;
-    this.shortUrlBase = Mojo.Controller.appInfo.shortURL;
-};
+var ShareServiceModel = function() {};
 
 //Properties
 ShareServiceModel.prototype.ForceHTTPS = false;
-ShareServiceModel.prototype.UseCustomShare = false;
-ShareServiceModel.prototype.UseCustomEndpoint = false;
 ShareServiceModel.prototype.CustomEndpointURL = "";
 ShareServiceModel.prototype.CustomShortURL = "";
 ShareServiceModel.prototype.CustomCreateKey = "";
-ShareServiceModel.prototype.UseCustomClientId = false;
 ShareServiceModel.prototype.CustomClientId = "";
-//ShareServiceModel.prototype.ServiceCompatWarning = 0;
 
 ShareServiceModel.prototype.buildURL = function(username, actionType) {
-    var urlBase = this.urlBase;
-    if (this.UseCustomEndpoint == true && this.CustomEndpointURL != "") {
-        urlBase = this.CustomEndpointURL;
-    }
-    //Make sure we don't end up with double slashes in the built URL if there's a custom endpoint
-    var urlTest = urlBase.split("://");
-    if (urlTest[urlTest.length - 1].indexOf("/") != -1) {
+    var urlBase = this.CustomEndpointURL || "";
+    if (!urlBase) return "";
+    // Strip trailing slash before appending path
+    if (urlBase[urlBase.length - 1] == "/")
         urlBase = urlBase.substring(0, urlBase.length - 1);
-    }
     var path = urlBase + "/" + actionType + ".php";
     if (username)
         path += "?username=" + username;
@@ -41,10 +30,8 @@ ShareServiceModel.prototype.buildURL = function(username, actionType) {
 }
 
 ShareServiceModel.prototype.MakeShareURL = function(username, guid, type) {
-    var urlBase = this.shortUrlBase;
-    if (this.UseCustomEndpoint == true && this.CustomShortURL != "") {
-        urlBase = this.CustomShortURL;
-    }
+    var urlBase = this.CustomShortURL || this.CustomEndpointURL || "";
+    if (!urlBase) return "";
     if (type.indexOf("image") != -1)
         urlBase = urlBase + "download.php?";
     else
@@ -429,21 +416,9 @@ ShareServiceModel.prototype.QueryShareData = function(query, callback) {
 }
 
 ShareServiceModel.prototype.getCurrentClientKey = function() {
-    var retVal = atob(appKeys['shareBoardClientKey']);
-    if (this.UseCustomEndpoint) {
-        retVal = this.CustomClientId;
-        Mojo.Log.info("Using custom shareboard client key: " + retVal);
-    }
-    //Mojo.Log.info("Using shareboard client key: " + retVal);
-    return retVal;
+    return this.CustomClientId || "";
 }
 
 ShareServiceModel.prototype.getCurrentCreateKey = function() {
-    var retVal = atob(appKeys['shareBoardCreateKey']);
-    if (this.UseCustomEndpoint) {
-        retVal = this.CustomCreateKey;
-        Mojo.Log.info("Using custom shareboard create key: " + retVal);
-    }
-    //Mojo.Log.info("Using shareboard create key: " + retVal);
-    return retVal;
+    return this.CustomCreateKey || "";
 }

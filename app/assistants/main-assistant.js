@@ -1,7 +1,6 @@
 /*
     Share Space clipboard app for webOS.
-    This app depends on a sharing service, which is hosted by webOS Archive at no cost for what remains of the webOS mobile community.
-    You can also host the service yourself: http://www.github.com/webosarchive/sharing-service
+    Requires a self-hosted sharing service: https://github.com/webosarchive/sharing-service
 */
 
 var refreshInt;
@@ -109,25 +108,10 @@ MainAssistant.prototype.activate = function(data) {
 
     //Set options for service model
     serviceModel.ForceHTTPS = appModel.AppSettingsCurrent["ForceHTTPS"];
-    serviceModel.UseCustomEndpoint = appModel.AppSettingsCurrent["UseCustomEndpoint"];
     serviceModel.CustomEndpointURL = appModel.AppSettingsCurrent["EndpointURL"];
     serviceModel.CustomShortURL = appModel.AppSettingsCurrent["ShortURL"];
     serviceModel.CustomCreateKey = appModel.AppSettingsCurrent["CustomCreateKey"];
-    serviceModel.UseCustomClientId = appModel.AppSettingsCurrent["UseCustomClientId"];
     serviceModel.CustomClientId = appModel.AppSettingsCurrent["CustomClientId"];
-
-    // Deprecation banner: show when using the default endpoint and not yet dismissed
-    var usingDefault = (!appModel.AppSettingsCurrent["UseCustomEndpoint"]
-                        || !appModel.AppSettingsCurrent["EndpointURL"]
-                        || appModel.AppSettingsCurrent["EndpointURL"] == "");
-    var dismissed = appModel.DeprecationDismissed;
-    if (usingDefault && !dismissed) {
-        this.controller.get("divDeprecationBanner").style.display = "block";
-        this.bannerClickHandler = this.handleBannerClick.bind(this);
-        this.controller.get("divDeprecationBanner").addEventListener("click", this.bannerClickHandler);
-    } else {
-        this.controller.get("divDeprecationBanner").style.display = "none";
-    }
 
     //Set correct menu label
     var loggedInLabel = "Log In";
@@ -187,9 +171,7 @@ MainAssistant.prototype.activate = function(data) {
 
 
     //Check if we're registered to handle URLs
-    useShortLink = Mojo.Controller.appInfo.shortURL;
-    if (appModel.AppSettingsCurrent["UseCustomEndpoint"] && appModel.AppSettingsCurrent["ShortURL"] && appModel.AppSettingsCurrent["ShortURL"] != "")
-        useShortLink = appModel.AppSettingsCurrent["ShortURL"];
+    useShortLink = appModel.AppSettingsCurrent["ShortURL"] || appModel.AppSettingsCurrent["EndpointURL"] || "";
     var shortLinkProbe = useShortLink.replace(/\/+$/, "");
     systemModel.ListHandlersForURL(shortLinkProbe,
         function(response) {
@@ -276,9 +258,7 @@ MainAssistant.prototype.handleCommand = function(event) {
                     thisMenuModel.items[2].chosen = false;
                 } else {
                     //add URL handler — derive host from configured short URL
-                    var handlerShortLink = Mojo.Controller.appInfo.shortURL;
-                    if (appModel.AppSettingsCurrent["UseCustomEndpoint"] && appModel.AppSettingsCurrent["ShortURL"] && appModel.AppSettingsCurrent["ShortURL"] != "")
-                        handlerShortLink = appModel.AppSettingsCurrent["ShortURL"];
+                    var handlerShortLink = appModel.AppSettingsCurrent["ShortURL"] || appModel.AppSettingsCurrent["EndpointURL"] || "";
                     var handlerHost = handlerShortLink.replace(/^[a-z]+:\/\//i, "").replace(/\/.*$/, "");
                     var escapedHost = handlerHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
                     systemModel.AddHandlerForURL("^[^:]+://" + escapedHost, Mojo.Controller.appInfo.id);
@@ -526,29 +506,14 @@ MainAssistant.prototype.showNewShareScene = function() {
 }
 
 /* Login Stuff */
-MainAssistant.prototype.handleBannerClick = function(event) {
-    var targetId = event.target ? event.target.id : "";
-    if (targetId == "lnkDismissBanner") {
-        appModel.DeprecationDismissed = true;
-        this.controller.get("divDeprecationBanner").style.display = "none";
-        this.controller.get("divDeprecationBanner").removeEventListener("click", this.bannerClickHandler);
-    } else {
-        var stageController = Mojo.Controller.getAppController().getActiveStageController();
-        stageController.pushScene({ name: "preferences", disableSceneScroller: false });
-    }
-}
 
 MainAssistant.prototype.showWelcomePrompt = function() {
-    var hasEndpoint = (appModel.AppSettingsCurrent["UseCustomEndpoint"]
-                       && appModel.AppSettingsCurrent["EndpointURL"] != "");
-    var choices = [
-        { label: 'Log In', value: "login", type: 'affirmative' },
-        { label: 'Create New', value: "new", type: 'neutral' },
-        { label: 'Preferences', value: "prefs", type: 'neutral' }
-    ];
-    var message = hasEndpoint
-        ? "Do you want to Log In to an existing share space, or create a new one on your server?"
-        : "The community server is shutting down later this year. Log In to retrieve your content before it closes, or set up your own server in Preferences.";
+    var hasEndpoint = (appModel.AppSettingsCurrent["EndpointURL"] && appModel.AppSettingsCurrent["EndpointURL"] != "");
+    if (!hasEndpoint) {
+        var stageController = Mojo.Controller.getAppController().getActiveStageController();
+        stageController.pushScene({ name: "setup", disableSceneScroller: false });
+        return;
+    }
     this.controller.showAlertDialog({
         onChoose: function(value) {
             if (value == "login") {
@@ -562,8 +527,12 @@ MainAssistant.prototype.showWelcomePrompt = function() {
             }
         }.bind(this),
         title: "Welcome to Share Space!",
-        message: message,
-        choices: choices
+        message: "Do you want to Log In to an existing share space, or create a new one on your server?",
+        choices: [
+            { label: 'Log In', value: "login", type: 'affirmative' },
+            { label: 'Create New', value: "new", type: 'neutral' },
+            { label: 'Preferences', value: "prefs", type: 'neutral' }
+        ]
     });
 }
 
@@ -608,16 +577,8 @@ MainAssistant.prototype.showLogin = function() {
     }
 }
 
-/* End of Life Stuff */
-
 MainAssistant.prototype.deactivate = function(event) {
-    /* remove any event handlers you added in activate and do any other cleanup that should happen before
-       this scene is popped or another scene is pushed on top */
     this.controller.window.clearInterval(refreshInt);
-    if (this.bannerClickHandler) {
-        this.controller.get("divDeprecationBanner").removeEventListener("click", this.bannerClickHandler);
-        this.bannerClickHandler = null;
-    }
     Mojo.Event.stopListening(this.controller.get("shareList"), Mojo.Event.listDelete, this.handleListDelete);
     Mojo.Event.stopListening(this.controller.get("shareList"), Mojo.Event.listTap, this.handleListClick);
     Mojo.Event.stopListening(this.controller.get("shareList"), Mojo.Event.listAdd, this.handleListAdd);

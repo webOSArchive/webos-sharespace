@@ -57,6 +57,26 @@ NewuserAssistant.prototype.setup = function() {
 };
 
 NewuserAssistant.prototype.activate = function(event) {
+    // Require a configured server before creating an account
+    if (!appModel.AppSettingsCurrent["EndpointURL"] || appModel.AppSettingsCurrent["EndpointURL"] == "") {
+        this.controller.showAlertDialog({
+            onChoose: function(value) {
+                var stageController = Mojo.Controller.getAppController().getActiveStageController();
+                if (value == "prefs") {
+                    stageController.pushScene({ name: "preferences", disableSceneScroller: false });
+                } else {
+                    stageController.swapScene({ transition: Mojo.Transition.crossFade, name: "main" });
+                }
+            },
+            title: "Server Required",
+            message: "You must configure a server before creating an account. Open Preferences to enter your server address.",
+            choices: [
+                { label: "Open Preferences", value: "prefs", type: "affirmative" },
+                { label: "Cancel", value: "cancel", type: "negative" }
+            ]
+        });
+        return;
+    }
     /* add event handlers to listen to events from widgets */
     Mojo.Event.listen(this.controller.get("btnAgree"), Mojo.Event.tap, this.agreeClick.bind(this));
     Mojo.Event.listen(this.controller.get("btnCancel"), Mojo.Event.tap, this.cancelClick.bind(this));

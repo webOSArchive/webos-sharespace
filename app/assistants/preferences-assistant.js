@@ -4,10 +4,6 @@ PreferencesAssistant.prototype.setup = function() {
 
     // --- Server Settings ---
 
-    this.controller.setupWidget("toggleCustomEndPoint",
-        this.attributes = { trueValue: true, falseValue: false },
-        this.model = { value: appModel.AppSettingsCurrent["UseCustomEndpoint"], disabled: false }
-    );
     this.controller.setupWidget("txtEndpointURL",
         this.attributes = {
             hintText: $L("http://raspberrypi.local:8080/"),
@@ -18,7 +14,7 @@ PreferencesAssistant.prototype.setup = function() {
         },
         this.model = {
             value: appModel.AppSettingsCurrent["EndpointURL"],
-            disabled: !appModel.AppSettingsCurrent["UseCustomEndpoint"]
+            disabled: false
         }
     );
     this.controller.setupWidget("txtShortURL",
@@ -31,7 +27,20 @@ PreferencesAssistant.prototype.setup = function() {
         },
         this.model = {
             value: appModel.AppSettingsCurrent["ShortURL"],
-            disabled: !appModel.AppSettingsCurrent["UseCustomEndpoint"]
+            disabled: false
+        }
+    );
+    this.controller.setupWidget("txtCustomClientId",
+        this.attributes = {
+            hintText: $L("Your Server Client ID"),
+            multiline: false,
+            enterSubmits: false,
+            autoReplace: false,
+            textCase: Mojo.Widget.steModeLowerCase
+        },
+        this.model = {
+            value: appModel.AppSettingsCurrent["CustomClientId"],
+            disabled: false
         }
     );
     this.controller.setupWidget("txtCustomCreateKey",
@@ -44,40 +53,19 @@ PreferencesAssistant.prototype.setup = function() {
         },
         this.model = {
             value: appModel.AppSettingsCurrent["CustomCreateKey"],
-            disabled: !appModel.AppSettingsCurrent["UseCustomEndpoint"]
+            disabled: false
         }
     );
     this.controller.setupWidget("toggleForceHTTPS",
         this.attributes = { trueValue: true, falseValue: false },
         this.model = {
             value: appModel.AppSettingsCurrent["ForceHTTPS"],
-            disabled: !appModel.AppSettingsCurrent["UseCustomEndpoint"]
+            disabled: false
         }
     );
     this.controller.setupWidget("btnTestConnection",
         { type: Mojo.Widget.defaultButton },
-        { label: "Test Connection", disabled: !appModel.AppSettingsCurrent["UseCustomEndpoint"] }
-    );
-    this.controller.setupWidget("drawerSelfHost",
-        this.attributes = { modelProperty: 'open', unstyled: false },
-        this.model = { open: appModel.AppSettingsCurrent["UseCustomEndpoint"] }
-    );
-    this.controller.setupWidget("toggleCustomClientId",
-        this.attributes = { trueValue: true, falseValue: false },
-        this.model = { value: appModel.AppSettingsCurrent["UseCustomClientId"], disabled: false }
-    );
-    this.controller.setupWidget("txtCustomClientId",
-        this.attributes = {
-            hintText: $L("Your Server Client ID"),
-            multiline: false,
-            enterSubmits: false,
-            autoReplace: false,
-            textCase: Mojo.Widget.steModeLowerCase
-        },
-        this.model = {
-            value: appModel.AppSettingsCurrent["CustomClientId"],
-            disabled: !appModel.AppSettingsCurrent["UseCustomClientId"]
-        }
+        { label: "Test Connection", disabled: false }
     );
 
     // Endpoint status description
@@ -154,11 +142,11 @@ PreferencesAssistant.prototype.setup = function() {
 PreferencesAssistant.prototype.updateEndpointStatus = function() {
     var statusEl = this.controller.get("divEndpointStatus");
     if (!statusEl) return;
-    if (appModel.AppSettingsCurrent["UseCustomEndpoint"]
-            && appModel.AppSettingsCurrent["EndpointURL"] != "") {
-        statusEl.innerHTML = "Using: " + appModel.AppSettingsCurrent["EndpointURL"];
+    var url = appModel.AppSettingsCurrent["EndpointURL"];
+    if (url && url != "") {
+        statusEl.innerHTML = "Using: " + url;
     } else {
-        statusEl.innerHTML = "Using: default service (shutting down)";
+        statusEl.innerHTML = "No server configured. Enter your server address below.";
     }
 };
 
@@ -168,9 +156,7 @@ PreferencesAssistant.prototype.activate = function(event) {
     Mojo.Event.listen(this.controller.get("toggleAutoDownload"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("listAutoDownloadTime"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("toggleCopyLinkOnShare"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
-    Mojo.Event.listen(this.controller.get("toggleCustomClientId"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("txtCustomClientId"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
-    Mojo.Event.listen(this.controller.get("toggleCustomEndPoint"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("txtEndpointURL"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("txtShortURL"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("txtCustomCreateKey"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
@@ -187,45 +173,11 @@ PreferencesAssistant.prototype.handleValueChange = function(event) {
             appModel.AppSettingsCurrent["ThemePreference"] = event.value;
             appModel.SetThemePreference(this.controller);
             break;
-        case "toggleCustomClientId":
-            {
-                var clientIdSetup = this.controller.getWidgetSetup("txtCustomClientId");
-                clientIdSetup.model.disabled = !event.value;
-                this.controller.modelChanged(clientIdSetup.model);
-                if (event.value)
-                    this.controller.get('txtCustomClientId').mojo.focus();
-                break;
-            }
         case "toggleAutoDownload":
             {
                 var dlTimeSetup = this.controller.getWidgetSetup("listAutoDownloadTime");
                 dlTimeSetup.model.disabled = !event.value;
                 this.controller.modelChanged(dlTimeSetup.model);
-                break;
-            }
-        case "toggleCustomEndPoint":
-            {
-                var drawerSetup = this.controller.getWidgetSetup("drawerSelfHost");
-                drawerSetup.model.open = event.value;
-                this.controller.modelChanged(drawerSetup.model);
-                var urlSetup = this.controller.getWidgetSetup("txtEndpointURL");
-                urlSetup.model.disabled = !event.value;
-                this.controller.modelChanged(urlSetup.model);
-                var shortSetup = this.controller.getWidgetSetup("txtShortURL");
-                shortSetup.model.disabled = !event.value;
-                this.controller.modelChanged(shortSetup.model);
-                var keySetup = this.controller.getWidgetSetup("txtCustomCreateKey");
-                keySetup.model.disabled = !event.value;
-                this.controller.modelChanged(keySetup.model);
-                var httpsSetup = this.controller.getWidgetSetup("toggleForceHTTPS");
-                httpsSetup.model.disabled = !event.value;
-                this.controller.modelChanged(httpsSetup.model);
-                var testSetup = this.controller.getWidgetSetup("btnTestConnection");
-                testSetup.model.disabled = !event.value;
-                this.controller.modelChanged(testSetup.model);
-                if (event.value)
-                    this.controller.get('txtEndpointURL').mojo.focus();
-                this.updateEndpointStatus();
                 break;
             }
         case "txtEndpointURL":
@@ -253,7 +205,8 @@ PreferencesAssistant.prototype.handleValueChange = function(event) {
 PreferencesAssistant.prototype.testConnection = function() {
     var endpointURL = this.controller.get('txtEndpointURL').mojo.getValue();
     if (!endpointURL || endpointURL == "") {
-        endpointURL = Mojo.Controller.appInfo.serviceURL;
+        Mojo.Additions.ShowDialogBox("No Server Configured", "Enter a server address before testing the connection.");
+        return;
     }
     if (endpointURL[endpointURL.length - 1] == "/") {
         endpointURL = endpointURL.substring(0, endpointURL.length - 1);
@@ -294,9 +247,10 @@ PreferencesAssistant.prototype.okClick = function(event) {
 };
 
 PreferencesAssistant.prototype.deactivate = function(event) {
-    if (this.controller.get('txtEndpointURL').mojo.getValue() == "") {
-        appModel.AppSettingsCurrent["UseCustomEndpoint"] = false;
-    }
+    // Compute UseCustomEndpoint from whether a URL is configured
+    var endpointURL = appModel.AppSettingsCurrent["EndpointURL"] || "";
+    appModel.AppSettingsCurrent["UseCustomEndpoint"] = (endpointURL != "");
+    appModel.AppSettingsCurrent["UseCustomClientId"] = true;
     appModel.SaveSettings();
     appModel.EstablishAlarms();
 
@@ -305,9 +259,7 @@ PreferencesAssistant.prototype.deactivate = function(event) {
     Mojo.Event.stopListening(this.controller.get("toggleAutoDownload"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("listAutoDownloadTime"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("toggleCopyLinkOnShare"), Mojo.Event.propertyChange, this.handleValueChange);
-    Mojo.Event.stopListening(this.controller.get("toggleCustomClientId"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("txtCustomClientId"), Mojo.Event.propertyChange, this.handleValueChange);
-    Mojo.Event.stopListening(this.controller.get("toggleCustomEndPoint"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("txtEndpointURL"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("txtShortURL"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("txtCustomCreateKey"), Mojo.Event.propertyChange, this.handleValueChange);

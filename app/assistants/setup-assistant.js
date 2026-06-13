@@ -16,8 +16,7 @@ SetupAssistant.prototype.activate = function(event) {
     Mojo.Event.listen(this.controller.get("btnSetupPreferences"), Mojo.Event.tap, this.openPreferences.bind(this));
     Mojo.Event.listen(this.controller.get("btnSetupSkip"), Mojo.Event.tap, this.skipSetup.bind(this));
     // When returning from Preferences, auto-advance to main if an endpoint is now configured
-    if (appModel.AppSettingsCurrent["UseCustomEndpoint"]
-            && appModel.AppSettingsCurrent["EndpointURL"] != "") {
+    if (appModel.AppSettingsCurrent["EndpointURL"] && appModel.AppSettingsCurrent["EndpointURL"] != "") {
         var stageController = Mojo.Controller.getAppController().getActiveStageController();
         stageController.swapScene({ transition: Mojo.Transition.crossFade, name: "main" });
     }
